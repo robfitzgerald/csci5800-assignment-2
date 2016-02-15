@@ -35,7 +35,7 @@
 (define _ '_)
 (define B 'B)
 (define W 'W)
-(define (new-state p0 p1 p2 p3 p4 p5 p6) 
+(define (new-state p0 p1 p2 p3 p4 p5 p6)
   (vector p0 p1 p2 p3 p4 p5 p6))
 (define (copy-state state)
   (vector-copy state))
@@ -50,8 +50,9 @@
 (define (W? a)
   (eq? a 'W))
 (define (in-range? num)
-  (and (>= num 0)
-       (<= num 7)))
+  (and (number? num)
+       (>= num 0)
+       (< num 7)))
 
 ;;; queries & query helpers.
 
@@ -81,7 +82,8 @@
 (define (swap vec i j)
   (define temp (vector-ref vec i))
   (vector-set! vec i (vector-ref vec j))
-  (vector-set! vec j temp))
+  (vector-set! vec j temp)
+  vec)
   
 ;;; rules
 
@@ -89,19 +91,25 @@
 
 ; B _
 (define-rule goats-rule (B-step-1 state)
-  (in-range? (left-of (at-space state)))
+  (and (in-range? (left-of (at-space state)))
+       (in-range? (at-space state))
+       (B? (at state (left-of (at-space state)))))
+       
 =>
   (swap (copy-state state) (at-space state) (left-of (at-space state))))
 
 ; _ W
 (define-rule goats-rule (W-step-1 state)
-  (in-range (right-of (at-space state)))
+  (and (in-range? (right-of (at-space state)))
+       (in-range? (at-space state))
+       (W? (at state (right-of (at-space state)))))
 =>
   (swap (copy-state state) (at-space state) (right-of (at-space state))))
 
 ; B * _
 (define-rule goats-rule (B-jump-1 state)
   (and (in-range? (two-left-of (at-space state)))
+       (in-range? (at-space state))
        (B? (at state (two-left-of (at-space state)))))
 =>
   (swap (copy-state state) (at-space state) (two-left-of (at-space state))))
@@ -109,6 +117,7 @@
 ; _ * W
 (define-rule goats-rule (W-jump-1 state)
   (and (in-range? (two-right-of (at-space state)))
+       (in-range? (at-space state))
        (W? (at state (two-right-of (at-space state)))))
 =>
   (swap (copy-state state) (at-space state) (two-right-of (at-space state))))
@@ -116,6 +125,7 @@
 ; B * * _
 (define-rule goats-rule (B-jump-2 state)
   (and (in-range? (three-left-of (at-space state)))
+       (in-range? (at-space state))
        (B? (at state (three-left-of (at-space state)))))
 =>
   (swap (copy-state state) (at-space state) (three-left-of (at-space state))))
@@ -123,6 +133,7 @@
 ; _ * * W
 (define-rule goats-rule (W-jump-2 state)
   (and (in-range? (three-right-of (at-space state)))
+       (in-range? (at-space state))
        (W? (at state (three-right-of (at-space state)))))
 =>
   (swap (copy-state state) (at-space state) (three-right-of (at-space state))))
@@ -147,3 +158,4 @@
         (printf "---~n~n"))
 
 (goats-search (new-state B B B _ W W W) (new-state W W W _ B B B) 'prepend)
+(goats-search (new-state B B B _ W W W) (new-state W W W _ B B B) 'append)
