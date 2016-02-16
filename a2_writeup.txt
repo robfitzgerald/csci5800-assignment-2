@@ -1,0 +1,15 @@
+Rob Fitzgerald
+CSCI-5800 - D. Williams
+Assignment #2: Mountain Goats Problem
+
+Is there a difference in the solution for a breadth-first versus depth-first traversal of the graph? 
+
+Yes. As expected, the depth-first (typically) generates fewer nodes in its search for a solution, but it (typically) finds a less optimal solution than the breadth first search. For example, with 3 of each goat type, a depth-first search resulted in 32 nodes generated, of which 18 were expanded from, and a solution which takes 15 moves. Breadth-first, alternatively, generated and expanded 127 nodes, but found an optimal solution at 11 moves.
+
+What is the difference in the number of node generated and explored?
+
+For the breadth-first search, there is no difference.  With the depth-first, we are choosing to prepend valid future moves to our working list, which makes us take deeper steps into the graph at each recursion. we may have generated a few possible moves from a given state, but, we will begin exploring only one of them. if we happen to achieve the goal before coming back for the other states, then we will see that the number of nodes generated exceedes the number actually explored.
+
+Extend your representation to handle any number of black and white goats – they don’t have to be the same number. Is the problem solvable for all such combinations?
+
+Sure seems to be, and I believe it should. The 3 goat-moving operations for the two different directions cover all of the cases that are needed to move the different goat types, up to values well beyond the depth of the 1, 2, and 3 step moves. This problem seems to have a greedy solution to it, where a piece only needs to be moved where it then triggers at least one follow-up move for the opposite team. I don't have a proof to support this, but I believe it should be solvable for all such combinations with two groups and a space between them.

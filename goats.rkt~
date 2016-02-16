@@ -1,5 +1,9 @@
 #lang racket
 
+; rob fitzgerald
+; s# 103400432
+; csci5800 spring 2016
+
 (require "graph-search.rkt")
 
 ;;; csci 5800 assignment 2: Black and White Mountain Goat Dance Party
@@ -12,7 +16,7 @@
 ; move forward into an empty space, jump over one mountain goat to an empty space, or jump over two mountain goats 
 ; to an empty space. How can they all continue on their way?
 
-; We can abstract this to the following: B B B_ WWW
+; We can abstract this to the following: B B B _ W W W
 
 ; Where each B represents a black mountain goat, each W represents a white mountain goat, and _ represents a blank 
 ; space. Each B may move right into an adjacent _, jump over an intervening B or W into an _, or jump over two 
@@ -25,3 +29,141 @@
 
 ; Extend your representation to handle any number of black and white goats – they don’t have to be the same number.
 ; Is the problem solvable for all such combinations?
+
+;;; containers
+
+(define _ '_)
+(define B 'B)
+(define W 'W)
+;(define (new-state pF ... pL)
+;  (vector pF ... pL))
+(define (copy-state state)
+  (vector-copy state))
+;define state as vector.
+  
+;;; predicates
+  
+(define (_? a)
+  (eq? a '_))
+(define (B? a)
+  (eq? a 'B))
+(define (W? a)
+  (eq? a 'W))
+(define (in-range? num limit)
+  (and (number? num)
+       (>= num 0)
+       (< num limit)))
+
+;;; queries & query helpers.
+
+;;; (length state) => number?
+(define (state-length state)
+  (vector-length state))
+
+;;; (at state pos) => any/c
+(define (at state pos)
+  (vector-ref state pos))
+
+;;; (at-space state) => number?
+(define (at-space state)
+  (vector-member _ state))
+
+(define (left-of num)
+  (- num 1))
+(define (two-left-of num)
+  (- num 2))
+(define (three-left-of num)
+  (- num 3))
+(define (right-of num)
+  (+ num 1))
+(define (two-right-of num)
+  (+ num 2))
+(define (three-right-of num)
+  (+ num 3))
+
+;;; mutators
+
+(define (swap vec i j)
+  (define temp (vector-ref vec i))
+  (vector-set! vec i (vector-ref vec j))
+  (vector-set! vec j temp)
+  vec)
+  
+;;; rules
+
+(define-ruleset goats-rule)
+
+; B _
+(define-rule goats-rule (B-step-1 state)
+  (and (in-range? (left-of (at-space state)) (state-length state))
+       (in-range? (at-space state) (state-length state))
+       (B? (at state (left-of (at-space state)))))
+       
+=>
+  (swap (copy-state state) (at-space state) (left-of (at-space state))))
+
+; _ W
+(define-rule goats-rule (W-step-1 state)
+  (and (in-range? (right-of (at-space state)) (state-length state))
+       (in-range? (at-space state) (state-length state))
+       (W? (at state (right-of (at-space state)))))
+=>
+  (swap (copy-state state) (at-space state) (right-of (at-space state))))
+
+; B * _
+(define-rule goats-rule (B-jump-1 state)
+  (and (in-range? (two-left-of (at-space state)) (state-length state))
+       (in-range? (at-space state) (state-length state))
+       (B? (at state (two-left-of (at-space state)))))
+=>
+  (swap (copy-state state) (at-space state) (two-left-of (at-space state))))
+
+; _ * W
+(define-rule goats-rule (W-jump-1 state)
+  (and (in-range? (two-right-of (at-space state)) (state-length state))
+       (in-range? (at-space state) (state-length state))
+       (W? (at state (two-right-of (at-space state)))))
+=>
+  (swap (copy-state state) (at-space state) (two-right-of (at-space state))))
+
+; B * * _
+(define-rule goats-rule (B-jump-2 state)
+  (and (in-range? (three-left-of (at-space state)) (state-length state))
+       (in-range? (at-space state) (state-length state))
+       (B? (at state (three-left-of (at-space state)))))
+=>
+  (swap (copy-state state) (at-space state) (three-left-of (at-space state))))
+
+; _ * * W
+(define-rule goats-rule (W-jump-2 state)
+  (and (in-range? (three-right-of (at-space state)) (state-length state))
+       (in-range? (at-space state) (state-length state))
+       (W? (at state (three-right-of (at-space state)))))
+=>
+  (swap (copy-state state) (at-space state) (three-right-of (at-space state))))
+
+;;; search
+
+(define (goats-search initial-state goal-state merge-method)
+  (printf "(goats-search ~a ~a '~a)~n" initial-state goal-state merge-method)
+  (define (goats-value state cost)
+    cost)
+  (define (goal? state)
+    (equal? state goal-state))
+  (define solution
+    (graph-search goats-rule initial-state goal?
+                  #:merge-method merge-method))
+  (cond (solution
+         (printf "Solution (~a states): ~n" (length solution))
+         (for ((state (in-list solution)))
+           (printf "~s~n" state)))
+         (else
+          (printf "No solution found.~n")))
+        (printf "---~n~n"))
+
+(goats-search (vector B B B _ W W W) (vector W W W _ B B B) 'prepend)
+(goats-search (vector B B B _ W W W) (vector W W W _ B B B) 'append)
+(goats-search (vector B B B B _ W W W W) (vector W W W W _ B B B B) 'prepend)
+(goats-search (vector B B B B _ W W W W) (vector W W W W _ B B B B) 'append)
+(goats-search (vector B _ W W W W) (vector W W W W _ B) 'prepend)
+(goats-search (vector B _ W W W W) (vector W W W W _ B) 'append)
